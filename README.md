@@ -1,2 +1,3 @@
 # 2_Grade
-My projects from 2_Grade, MIPT
+My projects from computer science lessons on second grade, MIPT
+
