@@ -10,9 +10,9 @@ int main(int argc, char** argv)
 	//Case with any arguments
 	if (argc > 1)		 
 	{
-    new_line_mode = strcmp(argv[1], "-n");	
+		new_line_mode = strcmp(argv[1], "-n");	
 
-    //Cases with "-n"
+		//Cases with "-n"
 		if (!new_line_mode && (argc > 2))						
 		{
 			for(int i = 2; i < argc; i++)
@@ -33,9 +33,9 @@ int main(int argc, char** argv)
 			for(int i = 1; i < argc; i++)
 			{
 				if (i != (argc - 1))
-						printf("%s ", argv[i]);
+					printf("%s ", argv[i]);
 				else 
-						printf("%s", argv[i]);	//Without space in the end
+					printf("%s", argv[i]);	//Without space in the end
 			}		
 				printf("\n");
 		}
