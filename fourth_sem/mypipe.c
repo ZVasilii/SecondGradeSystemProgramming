@@ -91,7 +91,12 @@ int main(int argc, char** argv)
 			}
 			n_bytes += write_num;
 
+
+
 		}
+
+		if (n_strings == 0)
+				n_words++;
 
 		fprintf(stderr, "\t%d\t%d\t%d\n",  n_strings, n_words - 1, n_bytes);
 
