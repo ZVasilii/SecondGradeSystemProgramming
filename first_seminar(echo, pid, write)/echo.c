@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
+// vim: ts=4
+
 int main(int argc, char **argv)
 {
 
