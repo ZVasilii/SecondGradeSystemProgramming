@@ -5,21 +5,32 @@
 #include <stdlib.h>
 #include <sys/wait.h>
 #include <time.h> 
+#include <getopt.h>
 
 
+enum {OPLEN = 10, BUFSIZE = 4096};
+const char optstring[OPLEN] = "+ q e f";
 
-const int BUFSIZE = 4096;
 
 
 int main(int argc, char** argv)
 {
+	struct option quiet = {"quiet", 0, NULL, 'q'};
 	int fork_flag = 100;
+	char q_flag = 0;
+	char opt_flag = 0;
 
 	if (argc < 2)
 	{
 		printf("Not enough arguments\n");
 		exit(0);
 	}
+
+
+while((opt_flag = getopt_long(argc, argv, optstring, &quiet, NULL)) > 0)	
+	if (opt_flag == 'q')
+		q_flag = 1;
+
 
 	char* buff = (char*) calloc(BUFSIZE, sizeof(char));
 
@@ -65,10 +76,12 @@ int main(int argc, char** argv)
 			if(read_num < 0)
 				perror("Something wrong with read\n");
 
-			write_num = write(1, buff, read_num);
-			if(write_num < 0)
-				perror("Something wrong with write\n");
-
+			if (!q_flag)
+			{ 
+				write_num = write(1, buff, read_num);
+				if(write_num < 0)
+					perror("Something wrong with write\n");
+			}	
 
 			for(int i = 0; i < read_num + 1; i++)
 			{
@@ -96,7 +109,7 @@ int main(int argc, char** argv)
 		}
 
 		if (n_strings == 0)
-				n_words++;
+				n_words++;-
 
 		fprintf(stderr, "\t%d\t%d\t%d\n",  n_strings, n_words - 1, n_bytes);
 
@@ -112,7 +125,7 @@ int main(int argc, char** argv)
 			perror("Something wrong closing fd[0]\n");
 		dup2(fd[1], 1);
 
-		if(execvp(argv[1], (argv + 1)) < 0)
+		if(execvp(argv[optind ], (argv + optind)) < 0)
 			perror("Incorrect exec\n");
 		
 	}
