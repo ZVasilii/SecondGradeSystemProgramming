@@ -27,10 +27,10 @@ int main(int argc, char** argv)
 	}
 
 
-while((opt_flag = getopt_long(argc, argv, optstring, &quiet, NULL)) > 0)	
-	if (opt_flag == 'q')
-		q_flag = 1;
-
+	while((opt_flag = getopt_long(argc, argv, optstring, &quiet, NULL)) > 0)
+		if (opt_flag == 'q')
+			q_flag = 1;
+	
 
 	char* buff = (char*) calloc(BUFSIZE, sizeof(char));
 
@@ -68,7 +68,7 @@ while((opt_flag = getopt_long(argc, argv, optstring, &quiet, NULL)) > 0)
 		if (close(fd[1]) < 0)
 			perror("Something wrong closing fd[1]\n");
 
-		wait(NULL);
+		
 
 
 		while ((read_num = read(fd[0] , buff, BUFSIZE)) > 0)
@@ -109,9 +109,11 @@ while((opt_flag = getopt_long(argc, argv, optstring, &quiet, NULL)) > 0)
 		}
 
 		if (n_strings == 0)
-				n_words++;-
+				n_words++;
 
-		fprintf(stderr, "\t%d\t%d\t%d\n",  n_strings, n_words - 1, n_bytes);
+		fprintf(stderr, "\t%lu\t%lu\t%lu\n",  n_strings, n_words - 1, n_bytes);
+
+		wait(NULL);
 
 
 		close(fd[0]);
