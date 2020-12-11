@@ -1,3 +1,9 @@
+/*
+Program that count from 1 to N using 
+papallel programming on posix threads
+ */
+
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
