@@ -1,3 +1,8 @@
+/*
+Program with client-server communication through pipe
+*/
+
+
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -9,7 +14,7 @@
 
 
 enum {OPLEN = 10, BUFSIZE = 4096};
-const char optstring[OPLEN] = "+ q e f";
+const char optstring[OPLEN] = "+ q";
 
 
 
@@ -34,8 +39,8 @@ int main(int argc, char** argv)
 
 	char* buff = (char*) calloc(BUFSIZE, sizeof(char));
 
-	size_t read_num = 0;
-	size_t write_num = 0;
+	int read_num = 0;
+	int write_num = 0;
 	int in_word = 0;
 
 
