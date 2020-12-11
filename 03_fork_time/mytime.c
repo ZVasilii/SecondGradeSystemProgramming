@@ -1,3 +1,7 @@
+/*
+Function that execute file and counting time
+ */
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -13,20 +17,6 @@ int main(int argc, char** argv)
 		printf("Not enough arguments\n");
 		exit(0);
 	}
-
-	/*
-	for (int i = 0; i < argc; i++)
-		//printf("%s\n", argv[i]);
-	
-
-	int clock_gettime(clockid_t clk_id, struct timespec *tp);
-	struct timespec {
-        time_t   tv_sec;        
-        long     tv_nsec;       
-	};
-	*/
-
-
 
 	struct timespec old = {0,0};
 	struct timespec new = {0,0};
