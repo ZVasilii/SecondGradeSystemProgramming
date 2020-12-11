@@ -1,3 +1,7 @@
+/*
+Equivalent to "id" UNIX function (print UID, GID)
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -6,7 +10,7 @@
 #include <pwd.h>
 #include <grp.h>
 
-/// распечатки
+
 
 const int max_groups = 100;
 const int max_len = 100;

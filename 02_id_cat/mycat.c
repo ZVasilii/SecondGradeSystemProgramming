@@ -1,27 +1,68 @@
-#include <unistd.h>
-#include <stdlib.h>
+/*
+Equivalent to "cat" UNIX function (print file into stdout)
+*/
+
+#include <sys/types.h>
+#include <sys/ipc.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-const size_t buffsize = 4096;
 
-//mywrite
 
-int main(int argc, int** argv)
+
+enum {STD_MOD, FIL_MOD, MAXLEN = 1024};
+
+
+int main(int argc, char** argv)
 {
-	char* buffer = (char*) malloc (buffsize * sizeof(char));
-	if (argc == 1) 
-	{
-		int rfl = 1;
-		int wfl = 1;
-		while (rfl != 0)
-		{
-			rfl = read(0, buffer, buffsize);
-			if (rfl < 0) perror("Error with read!\n");
+	int mode = -1;
+	int fd = -1;
+	FILE* file = NULL;
+	char buffer[MAXLEN] = "";
+	char* newline = NULL;
+	int errno = -1;
 
-			wfl = write(1, buffer, buffsize);
-		}
+	if (argc == 1)
+		mode = STD_MOD;
+	else
+		mode = FIL_MOD;
+
+
+	if (mode == STD_MOD)
+	{
+		file = fdopen(0, "r");			
+
+		while ((newline = fgets(buffer, MAXLEN, file)) != NULL)
+			printf("%s\n", newline);
+
+		errno = fclose(file);
+		if (errno < 0)
+			perror("Couldn't close the file\n");
+		
 	}
 
-	free(buffer);
-	return 0;
+	if (mode == FIL_MOD)
+
+		for (int i = 1; i < argc; i++)
+		{
+			fd = open(argv[i], O_RDONLY);
+			if (fd < 0)
+				perror("Couldn't open the file\n");
+			file = fdopen(fd, "r");
+
+			
+			while ((newline = fgets(buffer, MAXLEN, file)) != NULL)
+				printf("%s\n", newline);
+
+			errno = fclose(file);
+			if (errno < 0)
+				perror("Couldn't close the file\n");
+		}
+
+	return 0;	
 }
