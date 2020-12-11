@@ -1,3 +1,7 @@
+/*
+Client-server communication through message queues
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -21,7 +25,7 @@ struct msgbuf
 	WAIT_REGS - signal for judge to wait for all the runners to come
 	LEFT - signal for judge to wait for all the runners to left
 */
-enum{BUFF_SIZE = 4096, PERMISS = 0700};
+enum{BUFF_SIZE = 4096, PERMISS = 0777};
 enum status {WAIT_REGS = 100000000, LEFT = 10000000001};
 
 void judge(int N_runs, int id);
