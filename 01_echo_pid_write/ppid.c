@@ -1,3 +1,6 @@
+/*
+Program that writes pid and ppid into stdout
+ */
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>

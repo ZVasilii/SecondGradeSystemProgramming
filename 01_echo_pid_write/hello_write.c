@@ -1,3 +1,6 @@
+/*
+"Hello, World!" But with write
+*/
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
