@@ -6,6 +6,7 @@
 #include <sys/sem.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
+#include <errno.h>
 
 
 
@@ -40,29 +41,45 @@ int main()
 {
 	char buffer[BUFF_SIZE];
 	setvbuf(stdout, buffer, _IONBF, BUFF_SIZE);
+	int err = -1;
 
-	int key = ftok("/home", 'S');
+	int key = ftok("/home", 'G');
 	CHK(key);
 
 	//Creating semaphore set
 	int semid = semget(key, SEM_QTY, PERMISS | IPC_CREAT);
 	CHK(semid);
 
-	union semun arg = {0};
-  semctl(semid, SEMAPH, SETVAL, arg.val);
+	struct sembuf op = {SEMAPH, 0, IPC_NOWAIT};
+	int ret = semop(semid, &op, 1);
 
-  V(semid, SEMAPH);
+	op.sem_num = SEMAPH;  
+  op.sem_op =  1;	
+  op.sem_flg =  SEM_UNDO;  
+	err = semop(semid, &op, 1);
 
-  int sem_val =  semctl(semid, SEMAPH , GETVAL);
-  printf("arg = %d\n", sem_val);
+	if (ret == -1 && errno == EAGAIN)
+		print_goodbye();
+	else if (ret != -1)
+		print_hello();
+	else
+	{
+		perror("Something wrong with changing the semaphores (Operation P)\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	op.sem_num = SEMAPH;  
+  op.sem_op =  1;	
+  op.sem_flg =  SEM_UNDO;  
+	err = semop(semid, &op, 1);
 
-	//******CRITICAL SECTION*****//
-  if (sem_val == 1)
-  	print_hello();
-  else
-  	print_goodbye();
-  //******CRITICAL SECTION*****//
-	P(semid, SEMAPH);
+	if (err < 0)
+	{
+		perror("Something wrong with changing the semaphores (Operation V)\n");
+		exit(EXIT_FAILURE);
+	}
+
+ 
 	return 0;
 }
 
