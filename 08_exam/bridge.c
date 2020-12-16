@@ -23,7 +23,7 @@ struct shm_unit
 };
 
 
-enum {BUFF_SIZE = 4096, SEM_QTY = 4, SHM_SIZE = 1024, PERMISS = 0777, MAX_SHIPS = 3};
+enum {BUFF_SIZE = 4096, SEM_QTY = 4, SHM_SIZE = 1024, PERMISS = 0777, MAX_SHIPS = 3, DELAY_T = 100000};
 enum sem{CAR, SHIP, BRIDGE, SHARED};
 
 void car(int num, int sem_id, struct shm_unit* shm);
@@ -64,31 +64,31 @@ int main(int argc, char** argv)
 		perror("something wrong with shmget");
 		exit(EXIT_FAILURE);
 	}
-  struct shm_unit* shm = (struct shm_unit*) calloc (1, sizeof(struct shm_unit));
-  shm = (struct shm_unit*) shmat(shm_id, NULL, 0);
-  if (shm == NULL || (void*) shm == (void*) -1)
+  struct shm_unit* shar_mem = (struct shm_unit*) calloc (1, sizeof(struct shm_unit));
+  shar_mem = (struct shm_unit*) shmat(shm_id, NULL, 0);
+  if (shar_mem == NULL || (void*) shar_mem == (void*) -1)
   {
     perror("Something wrong with shmat\n");
     exit(EXIT_FAILURE);
   }
 
   //Initializing
-  shm->car_waiting = 0;
-  shm->ships_waiting = 0;
+  shar_mem->car_waiting = 0;
+  shar_mem->ships_waiting = 0;
   V(sem_id, SHARED);
   V(sem_id, BRIDGE);
   printf("***STARTING***\n");
   if (n_ship >= n_car)
   {
   	V(sem_id, SHIP);
-  	#ifdef PRINT
+  	#ifdef BR
   	printf("***Bridge: UP!***\n");
   	#endif
   }
   else
   {
   	V(sem_id, CAR);
-  	#ifdef PRINT
+  	#ifdef BR
   	printf("***Bridge: DOWN!***\n");
   	#endif
   }
@@ -101,9 +101,9 @@ int main(int argc, char** argv)
 		if (!fork_id)
 		{
 			if (i < n_ship)
-				ship(i, sem_id, shm);
+				ship(i, sem_id, shar_mem);
 			else
-				car(i - n_ship, sem_id, shm);
+				car(i - n_ship, sem_id, shar_mem);
 			exit(0);
 		}
 	}
@@ -119,12 +119,12 @@ int main(int argc, char** argv)
 	if (semctl(sem_id, SEM_QTY, IPC_RMID) < 0)
 	{
 		perror("Something wrong with semctl\n");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
-	if (shmctl(shm_id, IPC_RMID,  (struct shmid_ds*)shm) < 0)
+	if (shmctl(shm_id, IPC_RMID,  (struct shmid_ds*) shar_mem) < 0)
 	{
 		perror("Something wrong with shmctl\n");
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 
 	printf("***FINISHING***\n");
@@ -132,18 +132,26 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-void car(int num, int sem_id, struct shm_unit* shm)
+void car(int num, int sem_id, struct shm_unit* shar_mem)
 {
 	#ifdef PRINT
 	printf("Hello, i'm car #%d!\n", num);
 	#endif
 
+	#ifdef DELAY
+	usleep(DELAY_T);
+	#endif
+
 	num++;
 
 	P(sem_id, SHARED);
-		shm->car_waiting ++;
+		shar_mem->car_waiting ++;
 		printf("Car #%d!, waiting to enter the bridge!\n", num);
 	V(sem_id, SHARED);
+
+	#ifdef DELAY
+	usleep(DELAY_T);
+	#endif
 
 	P(sem_id, CAR);
 	//******CRITICAL SECTION*****
@@ -151,13 +159,18 @@ void car(int num, int sem_id, struct shm_unit* shm)
 
 	printf("Car #%d!, passing the brige!\n", num);
 
+	#ifdef DELAY
+	usleep(DELAY_T);
+	#endif
+
+
 	P(sem_id, SHARED);
-		shm->car_waiting --;
+		shar_mem->car_waiting --;
 		printf("Car #%d!, passed the bridge!\n", num);
 
-		if (shm->ships_waiting > MAX_SHIPS || ((shm->car_waiting == 0) && (shm->ships_waiting != 0)))
+		if (shar_mem->ships_waiting > MAX_SHIPS || ((shar_mem->car_waiting == 0) && (shar_mem->ships_waiting != 0)))
 		{
-			#ifdef PRINT
+			#ifdef BR
 			printf("***Bridge: UP!***\n");
 			#endif
 			V(sem_id, SHIP);
@@ -165,7 +178,7 @@ void car(int num, int sem_id, struct shm_unit* shm)
 		else
 		{
 			V(sem_id, CAR);
-			#ifdef PRINT
+			#ifdef BR
 			printf("***Bridge: DOWN!***\n");
 			#endif
 		}
@@ -176,39 +189,51 @@ void car(int num, int sem_id, struct shm_unit* shm)
 	return;
 }
 
-void ship(int num, int sem_id, struct shm_unit* shm)
+void ship(int num, int sem_id, struct shm_unit* shar_mem)
 {
 	#ifdef PRINT
 	printf("Hello, i'm ship #%d!\n", num);
 	#endif
 
+	#ifdef DELAY
+	usleep(DELAY_T);
+	#endif
+	
 	num++;
 
 	P(sem_id, SHARED);
-		shm->ships_waiting ++;
+		shar_mem->ships_waiting ++;
 		printf("Ship #%d!, waiting to enter the bridge!\n", num);
 	V(sem_id, SHARED);
+
+	#ifdef DELAY
+	usleep(DELAY_T);
+	#endif
 
 	P(sem_id, SHIP);
 	//******CRITICAL SECTION*****
 	P(sem_id, BRIDGE);
 	printf("Ship #%d!, passing the brige!\n", num);
 
+	#ifdef DELAY
+	usleep(DELAY_T);
+	#endif
+
 	P(sem_id, SHARED);
-		shm->ships_waiting --;
+		shar_mem->ships_waiting --;
 		printf("Ship #%d!, passed the bridge!\n", num);
 
-		if (shm->ships_waiting > MAX_SHIPS || ((shm->car_waiting == 0) && (shm->ships_waiting != 0)))
+		if (shar_mem->ships_waiting > MAX_SHIPS || ((shar_mem->car_waiting == 0) && (shar_mem->ships_waiting != 0)))
 		{
 			V(sem_id, SHIP);
-			#ifdef PRINT
+			#ifdef BR
 			printf("***Bridge: UP!***\n");
 			#endif
 		}
 		else
 		{
 			V(sem_id, CAR);
-			#ifdef PRINT
+			#ifdef BR
 			printf("***Bridge: DOWN!***\n");
 			#endif
 		}
