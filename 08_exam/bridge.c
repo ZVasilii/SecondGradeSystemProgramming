@@ -26,8 +26,8 @@ struct shm_unit
 enum {BUFF_SIZE = 4096, SEM_QTY = 4, SHM_SIZE = 1024, PERMISS = 0777, MAX_SHIPS = 3, DELAY_T = 100000};
 enum sem{CAR, SHIP, BRIDGE, SHARED};
 
-void car(int num, int sem_id, struct shm_unit* shm);
-void ship(int num, int sem_id, struct shm_unit* shm);
+void car(int num, int sem_id, struct shm_unit* shar_mem);
+void ship(int num, int sem_id, struct shm_unit* shar_mem);
 
 void Z(int sem_id, int n_sem);
 void P(int sem_id, int n_sem);
