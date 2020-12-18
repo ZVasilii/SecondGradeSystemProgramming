@@ -86,10 +86,9 @@ int main(int argc, char** argv)
   
 	V(sem_id, CAR);
 
-	printf("***Bridge: FALLING!***\n");
+	printf("Starting condition: BRIDGE FELL!\n");
 	shar_mem -> bridge_status = 0;
 	usleep(DELAY_T);
-	printf("***Bridge: FELL!***\n");
 
   
 
@@ -145,6 +144,23 @@ void car(int num, int sem_id, struct shm_unit* shar_mem)
 	P(sem_id, CAR);
 	//******CRITICAL SECTION*****
 	P(sem_id, BRIDGE);
+
+	//RETURNING IF THERE ARE SHIPS IN FRONT OF THE BRIDGE
+	P(sem_id, SHARED);
+	if (shar_mem->ships_waiting > MAX_SHIPS)
+	{
+		if (shar_mem -> bridge_status != 1)
+			  	printf("***Bridge: RISING!***\n");
+					shar_mem -> bridge_status = 1;
+					#ifdef DELAY
+					usleep(DELAY_T);
+					#endif
+					printf("***Bridge: RISED!***\n");
+		V(sem_id, SHIP);
+		V(sem_id, BRIDGE);
+
+	}
+	V(sem_id, SHARED);
 
 	printf("Car #%d!, passing the brige!\n", num);
 
