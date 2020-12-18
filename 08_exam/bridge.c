@@ -100,7 +100,7 @@ int main(int argc, char** argv)
 		fork_id = fork();
 		if (!fork_id)
 		{
-			if (i < n_ship)
+			if (i % 2)
 				ship(i, sem_id, shar_mem);
 			else
 				car(i - n_ship, sem_id, shar_mem);
@@ -172,6 +172,9 @@ void car(int num, int sem_id, struct shm_unit* shar_mem)
 		{
 			#ifdef BR
 			printf("***Bridge: UP!***\n");
+				#ifdef DELAY
+				usleep(DELAY_T);
+				#endif
 			#endif
 			V(sem_id, SHIP);
 		}
@@ -183,7 +186,6 @@ void car(int num, int sem_id, struct shm_unit* shar_mem)
 			#endif
 		}
 	V(sem_id, SHARED);
-	printf("Car #%d!, i'm dead now!\n", num);
 	V(sem_id, BRIDGE);
 	//******CRITICAL SECTION*****
 	return;
@@ -227,6 +229,9 @@ void ship(int num, int sem_id, struct shm_unit* shar_mem)
 		{
 			V(sem_id, SHIP);
 			#ifdef BR
+				#ifdef DELAY
+				usleep(DELAY_T);
+				#endif
 			printf("***Bridge: UP!***\n");
 			#endif
 		}
@@ -235,10 +240,12 @@ void ship(int num, int sem_id, struct shm_unit* shar_mem)
 			V(sem_id, CAR);
 			#ifdef BR
 			printf("***Bridge: DOWN!***\n");
+				#ifdef DELAY
+				usleep(DELAY_T);
+				#endif
 			#endif
 		}
 	V(sem_id, SHARED);
-	printf("Ship #%d!, i'm dead now!\n", num);
 	V(sem_id, BRIDGE);
 	//******CRITICAL SECTION*****
 	return;
