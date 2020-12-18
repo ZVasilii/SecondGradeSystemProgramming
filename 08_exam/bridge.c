@@ -16,14 +16,18 @@
 #include <unistd.h>
 
 //Shared structure
+//bridge_status == 0 - DOWN
+//bridge_status == 1 - UP
 struct shm_unit
 {
 	unsigned car_waiting;
 	unsigned ships_waiting;
+	unsigned bridge_status;
 };
 
 
-enum {BUFF_SIZE = 4096, SEM_QTY = 4, SHM_SIZE = 1024, PERMISS = 0777, MAX_SHIPS = 3, DELAY_T = 100000};
+
+enum {BUFF_SIZE = 4096, SEM_QTY = 4, SHM_SIZE = 1024, PERMISS = 0777, MAX_SHIPS = 3, DELAY_T = 1000000};
 enum sem{CAR, SHIP, BRIDGE, SHARED};
 
 void car(int num, int sem_id, struct shm_unit* shar_mem);
@@ -78,20 +82,16 @@ int main(int argc, char** argv)
   V(sem_id, SHARED);
   V(sem_id, BRIDGE);
   printf("***STARTING***\n");
-  if (n_ship >= n_car)
-  {
-  	V(sem_id, SHIP);
-  	#ifdef BR
-  	printf("***Bridge: UP!***\n");
-  	#endif
-  }
-  else
-  {
-  	V(sem_id, CAR);
-  	#ifdef BR
-  	printf("***Bridge: DOWN!***\n");
-  	#endif
-  }
+ 
+  
+	V(sem_id, CAR);
+
+	printf("***Bridge: FALLING!***\n");
+	shar_mem -> bridge_status = 0;
+	usleep(DELAY_T);
+	printf("***Bridge: FELL!***\n");
+
+  
 
   //Creating boat && car processes
 	int fork_id = -1;
@@ -101,19 +101,15 @@ int main(int argc, char** argv)
 		if (!fork_id)
 		{
 			if (i % 2)
-				ship(i, sem_id, shar_mem);
+				ship(i / 2, sem_id, shar_mem);
 			else
-				car(i - n_ship, sem_id, shar_mem);
-			exit(0);
+				car((i + 1) / 2, sem_id, shar_mem);
 		}
 	}
 
-	#ifdef PRINT
-	printf("Hello, I'm parent!\n");
-	#endif
 
 	//Waiting and removing everything
-	for (int j = 1; j < n_car + n_ship; j++)
+	for (int j = 0; j < n_car + n_ship; j++)
 		wait(NULL);
 
 	if (semctl(sem_id, SEM_QTY, IPC_RMID) < 0)
@@ -134,9 +130,6 @@ int main(int argc, char** argv)
 
 void car(int num, int sem_id, struct shm_unit* shar_mem)
 {
-	#ifdef PRINT
-	printf("Hello, i'm car #%d!\n", num);
-	#endif
 
 	#ifdef DELAY
 	usleep(DELAY_T);
@@ -148,10 +141,6 @@ void car(int num, int sem_id, struct shm_unit* shar_mem)
 		shar_mem->car_waiting ++;
 		printf("Car #%d!, waiting to enter the bridge!\n", num);
 	V(sem_id, SHARED);
-
-	#ifdef DELAY
-	usleep(DELAY_T);
-	#endif
 
 	P(sem_id, CAR);
 	//******CRITICAL SECTION*****
@@ -170,32 +159,27 @@ void car(int num, int sem_id, struct shm_unit* shar_mem)
 
 		if (shar_mem->ships_waiting > MAX_SHIPS || ((shar_mem->car_waiting == 0) && (shar_mem->ships_waiting != 0)))
 		{
-			#ifdef BR
-			printf("***Bridge: UP!***\n");
-				#ifdef DELAY
-				usleep(DELAY_T);
-				#endif
-			#endif
+			if (shar_mem -> bridge_status != 1)
+			  	printf("***Bridge: RISING!***\n");
+					shar_mem -> bridge_status = 1;
+					#ifdef DELAY
+					usleep(DELAY_T);
+					#endif
+					printf("***Bridge: RISED!***\n");
 			V(sem_id, SHIP);
 		}
 		else
 		{
 			V(sem_id, CAR);
-			#ifdef BR
-			printf("***Bridge: DOWN!***\n");
-			#endif
 		}
 	V(sem_id, SHARED);
 	V(sem_id, BRIDGE);
 	//******CRITICAL SECTION*****
-	return;
+	exit(0);
 }
 
 void ship(int num, int sem_id, struct shm_unit* shar_mem)
 {
-	#ifdef PRINT
-	printf("Hello, i'm ship #%d!\n", num);
-	#endif
 
 	#ifdef DELAY
 	usleep(DELAY_T);
@@ -207,10 +191,6 @@ void ship(int num, int sem_id, struct shm_unit* shar_mem)
 		shar_mem->ships_waiting ++;
 		printf("Ship #%d!, waiting to enter the bridge!\n", num);
 	V(sem_id, SHARED);
-
-	#ifdef DELAY
-	usleep(DELAY_T);
-	#endif
 
 	P(sem_id, SHIP);
 	//******CRITICAL SECTION*****
@@ -228,27 +208,22 @@ void ship(int num, int sem_id, struct shm_unit* shar_mem)
 		if (shar_mem->ships_waiting > MAX_SHIPS || ((shar_mem->car_waiting == 0) && (shar_mem->ships_waiting != 0)))
 		{
 			V(sem_id, SHIP);
-			#ifdef BR
-				#ifdef DELAY
-				usleep(DELAY_T);
-				#endif
-			printf("***Bridge: UP!***\n");
-			#endif
 		}
 		else
 		{
 			V(sem_id, CAR);
-			#ifdef BR
-			printf("***Bridge: DOWN!***\n");
-				#ifdef DELAY
-				usleep(DELAY_T);
-				#endif
-			#endif
+	  	printf("***Bridge: FALLING!***\n");
+	  	shar_mem -> bridge_status = 0;
+	  	#ifdef DELAY
+	  	usleep(DELAY_T);
+	  	#endif
+	  	printf("***Bridge: FELL!***\n");
+
 		}
 	V(sem_id, SHARED);
 	V(sem_id, BRIDGE);
 	//******CRITICAL SECTION*****
-	return;
+	exit(0);
 }
 
 
@@ -274,6 +249,7 @@ void P(int sem_id, int n_sem)
     op.sem_op =  -1;	
     op.sem_flg =  0;  
 	int err = semop(sem_id, &op, 1);
+	
 	if (err < 0)
 	{
 		perror("Something wrong with changing the semaphores (Operation P)\n");
@@ -289,10 +265,12 @@ void V(int sem_id, int n_sem)
     op.sem_op =  1;	
     op.sem_flg =  0;  
 	int err = semop(sem_id, &op, 1);
+	
 	if (err < 0)
 	{
 		perror("Something wrong with changing the semaphores (Operation V)\n");
 		exit(EXIT_FAILURE);
 	}
+	
 
 }
