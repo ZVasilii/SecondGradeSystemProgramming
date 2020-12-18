@@ -187,6 +187,18 @@ void ship(int num, int sem_id, struct shm_unit* shar_mem)
 	
 	num++;
 
+	#ifdef DELAY
+	usleep(DELAY_T);
+	#endif
+
+	if (num > 5)
+	{
+		#ifdef DELAY
+		for (int j = 0; j < 10; j++)
+			usleep(DELAY_T);
+		#endif
+	}
+
 	P(sem_id, SHARED);
 		shar_mem->ships_waiting ++;
 		printf("Ship #%d!, waiting to enter the bridge!\n", num);
@@ -205,7 +217,7 @@ void ship(int num, int sem_id, struct shm_unit* shar_mem)
 		shar_mem->ships_waiting --;
 		printf("Ship #%d!, passed the bridge!\n", num);
 
-		if (shar_mem->ships_waiting > MAX_SHIPS || ((shar_mem->car_waiting == 0) && (shar_mem->ships_waiting != 0)))
+		if (shar_mem->ships_waiting != 0)
 		{
 			V(sem_id, SHIP);
 		}
